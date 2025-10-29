@@ -564,9 +564,9 @@ with aba1:
             )
         )
 
-# =====================================================
+# ==============================================================================================================================================================
 # 2) Malha de Transportes - COM MAPAS FUNCIONAIS
-# =====================================================
+# ==============================================================================================================================================================
 with aba2:
     # Cabeçalho em card consolidado (um único bloco)
     render_card(
@@ -640,7 +640,6 @@ with aba2:
     c_tipo  = pick_norm("Tipo")                  # Tipo: CD, Fábrica, TP, OPL
     c_cidade = pick_norm("Cidade")               # Cidade como "empresa" visual
     c_uf  = pick_norm("UF")                      # UF como "bairro"
-    c_dtfim   = None
 
     st.success(f"✅ **{len(df_map)} unidade(s) de atendimento** com coordenadas válidas encontradas")
 
@@ -658,12 +657,13 @@ with aba2:
         st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
         st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
 
-        with st.expander("🏢 Unidades de Atendimento", expanded=True):
-            show_unidade = st.checkbox("Exibir Unidades", value=True, key="unidade_markers")
+        with st.expander("Unidades General Mills", expanded=True):
+            show_cd = st.checkbox("Centros de Distribuição", value=True, key="unidade_markers")
+            show_fabrica = st.checkbox("Fábricas", value=True, key="unidade_markers")           
 
-        with st.expander("🗾 Território", expanded=True):
-            show_distritos = st.checkbox("Distritos", value=True, key="unidade_distritos")
-            show_sede = st.checkbox("Sede Distritos", value=True, key="unidade_sede")
+        with st.expander("Unidades Terceirizadas", expanded=True):
+            show_tp = st.checkbox("Transit Point", value=True, key="unidade_tp")
+            show_opl = st.checkbox("OPL", value=True, key="unidade_opl")
 
         st.markdown('</div>', unsafe_allow_html=True)
     
@@ -694,24 +694,24 @@ with aba2:
             MousePosition().add_to(m2)
             Draw(export=True).add_to(m2)
 
-            # Camada Distritos
-            if show_distritos and gj_distritos:
+            # Camada OPL
+            if show_opl and gj_opl:
                 folium.GeoJson(
-                    gj_distritos,
-                    name="Distritos",
+                    gj_opl,
+                    name="Operadores Logísticos",
                     style_function=lambda x: {"fillColor": "#9fe2fc", "fillOpacity": 0.1, "color": "#000000", "weight": 1},
                 ).add_to(m2)
 
-            # Sede de Distritos
-            if show_sede and gj_sede:
-                lyr_sede = folium.FeatureGroup(name="Sede de Distritos")
-                for f in gj_sede.get("features", []):
+            # Camada TPs
+            if show_tp and gj_tp:
+                lyr_sede = folium.FeatureGroup(name="Transit Point")
+                for f in gj_tp.get("features", []):
                     x, y = f["geometry"]["coordinates"]
-                    nome = f.get("properties", {}).get("nome_do_distrito", "Sede")
+                    nome = f.get("properties", {}).get("nome_do_tp", "TPs")
                     folium.Marker([y, x], tooltip=nome, icon=folium.Icon(color="darkgreen", icon="home")).add_to(lyr_sede)
                 lyr_sede.add_to(m2)
 
-            # unidade
+            # Camada CDs
             if show_unidade and not df_map.empty:
                 def status_icon_color(status_val: str):
                     s = (str(status_val) if status_val is not None else "").strip().lower()
@@ -724,13 +724,13 @@ with aba2:
                 lyr_unidade = folium.FeatureGroup(name="unidade")
                 ignore_cols = {"__LAT__", "__LON__"}
                 for _, r in df_map.iterrows():
-                    nome   = str(r.get(c_unidade, "Obra")) if c_unidade else "Obra"
+                    nome   = str(r.get(c_unidade, "Unidade")) if c_unidade else "Unidade"
                     status = str(r.get(c_tipo, "-")) if c_tipo else "-"
                     empresa= str(r.get(c_cidade, "-")) if c_cidade else "-"
                     bairro = str(r.get(c_uf, "-")) if c_uf else "-"
 
                     extra_rows = []
-                    for c in df_unidade.columns:
+                    for c in df_unidades.columns:
                         if c in ignore_cols or c in {c_unidade, c_tipo, c_cidade, c_uf}:
                             continue
                         val = r.get(c, "")
@@ -741,11 +741,10 @@ with aba2:
                     popup_html = (
                         "<div style='font-family:Arial; font-size:13px'>"
                         f"<h4 style='margin:4px 0 8px 0'>🧱 {nome}</h4>"
-                        f"<p style='margin:0 0 6px'><b>Status:</b> {status}</p>"
-                        f"<p style='margin:0 0 6px'><b>Empresa:</b> {empresa}</p>"
-                        f"<p style='margin:0 0 6px'><b>Valor:</b> {valor}</p>"
-                        f"<p style='margin:0 0 6px'><b>Bairro/Localidade:</b> {bairro}</p>"
-                        f"<p style='margin:0 0 6px'><b>Início:</b> {dtini} &nbsp; <b>Término:</b> {dtfim}</p>"
+                        f"<p style='margin:0 0 6px'><b>Status:</b> {tipo}</p>"
+                        f"<p style='margin:0 0 6px'><b>Empresa:</b> {unidade}</p>"
+                        f"<p style='margin:0 0 6px'><b>Valor:</b> {cidade}</p>"
+                        f"<p style='margin:0 0 6px'><b>Bairro/Localidade:</b> {uf}</p>"
                         + (f"<table border='1' cellpadding='4' cellspacing='0' style='border-collapse:collapse; margin-top:6px'>{extra_html}</table>" if extra_html else "")
                         + "</div>"
                     )
@@ -754,7 +753,7 @@ with aba2:
                         location=[r["__LAT__"], r["__LON__"]],
                         tooltip=nome,
                         popup=folium.Popup(popup_html, max_width=420),
-                        icon=folium.Icon(color=status_icon_color(status), icon="info-sign")
+                        icon=folium.Icon(color=status_icon_color(tipo), icon="info-sign")
                     ).add_to(lyr_unidade)
 
                 lyr_unidade.add_to(m2)
@@ -773,16 +772,21 @@ with aba2:
         # Tabela
         st.markdown("### 📋 Tabela de unidade")
         priority = [c_unidade, c_tipo, c_cidade, c_uf]
-        ordered = [c for c in priority if c and c in df_unidade.columns]
-        rest = [c for c in df_unidade.columns if c not in ordered]
+        ordered = [c for c in priority if c and c in df_unidades.columns]
+        rest = [c for c in df_unidades.columns if c not in ordered]
         st.dataframe(df_unidade[ordered + rest] if ordered else df_unidade, use_container_width=True)
     else:
         st.error(f"❌ Não foi possível carregar o CSV de unidade em: {CSV_unidade}")
 
 
-# =====================================================
+
+
+
+# ==============================================================================================================================================================
 # 3) Mapa de Calor — FERRAMENTAS PADRONIZADAS
-# =====================================================
+# ==============================================================================================================================================================
+
+
 with aba3:
     # Import robusto (local) para capturar viewport quando possível
     try:
