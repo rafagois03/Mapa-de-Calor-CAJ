@@ -214,14 +214,14 @@ def css_global():
             }}
             
             /* Botão de toggle aprimorado */
-            #toggle-lyr-obras-pulse button, #toggle-panel-pulse button {{
+            #toggle-lyr-unidade-pulse button, #toggle-panel-pulse button {{
                  background-color: {COLORS["accent"]} !important;
                  border-color: {COLORS["accent"]} !important;
                  color: white !important;
                  font-weight: 600;
                  border-radius: 6px;
             }}
-            #toggle-lyr-obras button, #toggle-panel button {{
+            #toggle-lyr-unidade button, #toggle-panel button {{
                  background-color: #ffffff !important;
                  border-color: {COLORS["border"]} !important;
                  color: {COLORS["text_light"]} !important;
@@ -229,13 +229,13 @@ def css_global():
                  border-radius: 6px;
             }}
             
-            @keyframes pulseObras {{
+            @keyframes pulseunidade {{
                 0%    {{ transform: scale(1);    box-shadow: 0 0 0 0 {COLORS["accent"]}40; }} 
                 70%  {{ transform: scale(1.03); box-shadow: 0 0 0 12px {COLORS["accent"]}00; }}
                 100% {{ transform: scale(1);    box-shadow: 0 0 0 0 {COLORS["accent"]}00; }}
             }}
-            #toggle-lyr-obras-pulse button {{
-                animation: pulseObras 1.1s ease-in-out 0s 2;
+            #toggle-lyr-unidade-pulse button {{
+                animation: pulseunidade 1.1s ease-in-out 0s 2;
                 border-color: {COLORS["accent"]} !important;
             }}
         </style>
@@ -578,38 +578,38 @@ with aba2:
     EXCEL_FILE = next((p for p in EXCEL_FILE_CANDIDATES if os.path.exists(p)), None)
 
     if EXCEL_FILE is None:
-    st.error("❌ Arquivo 'Unidades de Atendimento.xlsx' não encontrado.")
-    st.stop()
+        st.error("❌ Arquivo 'Unidades de Atendimento.xlsx' não encontrado.")
+        st.stop()
 
     try:
-    df_unidades_raw = pd.read_excel(EXCEL_FILE)
-except Exception as e:
-    st.error(f"Erro ao ler o arquivo Excel: {e}")
-    st.stop()
-
-if not df_unidades_raw.empty:
-    # Normaliza colunas
-    colmap = {c: norm_col(c) for c in df_unidades_raw.columns}
-    df_obras = df_unidades_raw.rename(columns=colmap).copy()
-
-    # Detecta lat/lon (já estão nomeadas como "Latitude" e "Longitude")
-    lat_col = next((c for c in df_unidades.columns if c in {"latitude", "lat"}), None)
-    lon_col = next((c for c in df_unidades.columns if c in {"longitude", "long", "lon"}), None)
-    if not lat_col or not lon_col:
-        coords = autodetect_coords(df_unidades_raw.copy())
-        if coords:
-            lat_col, lon_col = coords
-
-    if not lat_col or not lon_col:
-        st.error("Não foi possível localizar colunas de latitude/longitude.")
+        df_unidades_raw = pd.read_excel(EXCEL_FILE)
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo Excel: {e}")
         st.stop()
+
+    if not df_unidades_raw.empty:
+        # Normaliza colunas
+        colmap = {c: norm_col(c) for c in df_unidades_raw.columns}
+        df_unidade = df_unidades_raw.rename(columns=colmap).copy()
+    
+        # Detecta lat/lon (já estão nomeadas como "Latitude" e "Longitude")
+        lat_col = next((c for c in df_unidades.columns if c in {"latitude", "lat"}), None)
+        lon_col = next((c for c in df_unidades.columns if c in {"longitude", "long", "lon"}), None)
+        if not lat_col or not lon_col:
+            coords = autodetect_coords(df_unidades_raw.copy())
+            if coords:
+                lat_col, lon_col = coords
+
+        if not lat_col or not lon_col:
+            st.error("Não foi possível localizar colunas de latitude/longitude.")
+            st.stop()
 
     df_unidades["__LAT__"] = to_float_series(df_unidades[lat_col])
     df_unidades["__LON__"] = to_float_series(df_unidades[lon_col])
 
     # Heurística para corrigir inversão e sinal — ajustada para o território brasileiro
-    lat_s = pd.to_numeric(df_obras["__LAT__"], errors="coerce")
-    lon_s = pd.to_numeric(df_obras["__LON__"], errors="coerce")
+    lat_s = pd.to_numeric(df_unidade["__LAT__"], errors="coerce")
+    lon_s = pd.to_numeric(df_unidade["__LON__"], errors="coerce")
 
     def _pct_inside(a, b):
         try:
@@ -627,7 +627,7 @@ if not df_unidades_raw.empty:
     ]
     best = max(cands, key=lambda x: x[3])
     if best[0] != "orig" and best[3] >= cands[0][3]:
-        df_obras["__LAT__"], df_obras["__LON__"] = best[1], best[2]
+        df_unidade["__LAT__"], df_unidade["__LON__"] = best[1], best[2]
 
     df_map = df_unidades.dropna(subset=["__LAT__", "__LON__"]).copy()
 
@@ -659,11 +659,11 @@ if not df_unidades_raw.empty:
         st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
 
         with st.expander("🏢 Unidades de Atendimento", expanded=True):
-            show_obras = st.checkbox("Exibir Unidades", value=True, key="obras_markers")
+            show_unidade = st.checkbox("Exibir Unidades", value=True, key="unidade_markers")
 
         with st.expander("🗾 Território", expanded=True):
-            show_distritos = st.checkbox("Distritos", value=True, key="obras_distritos")
-            show_sede = st.checkbox("Sede Distritos", value=True, key="obras_sede")
+            show_distritos = st.checkbox("Distritos", value=True, key="unidade_distritos")
+            show_sede = st.checkbox("Sede Distritos", value=True, key="unidade_sede")
 
         st.markdown('</div>', unsafe_allow_html=True)
     
@@ -711,8 +711,8 @@ if not df_unidades_raw.empty:
                     folium.Marker([y, x], tooltip=nome, icon=folium.Icon(color="darkgreen", icon="home")).add_to(lyr_sede)
                 lyr_sede.add_to(m2)
 
-            # Obras
-            if show_obras and not df_map.empty:
+            # unidade
+            if show_unidade and not df_map.empty:
                 def status_icon_color(status_val: str):
                     s = (str(status_val) if status_val is not None else "").strip().lower()
                     if any(k in s for k in ["conclu", "finaliz"]):     return "green"
@@ -721,7 +721,7 @@ if not df_unidades_raw.empty:
                     if any(k in s for k in ["planej", "licita", "proj"]): return "blue"
                     return "gray"
 
-                lyr_obras = folium.FeatureGroup(name="Obras")
+                lyr_unidade = folium.FeatureGroup(name="unidade")
                 ignore_cols = {"__LAT__", "__LON__"}
                 for _, r in df_map.iterrows():
                     nome   = str(r.get(c_unidade, "Obra")) if c_unidade else "Obra"
@@ -730,7 +730,7 @@ if not df_unidades_raw.empty:
                     bairro = str(r.get(c_uf, "-")) if c_uf else "-"
 
                     extra_rows = []
-                    for c in df_obras.columns:
+                    for c in df_unidade.columns:
                         if c in ignore_cols or c in {c_unidade, c_tipo, c_cidade, c_uf}:
                             continue
                         val = r.get(c, "")
@@ -755,11 +755,11 @@ if not df_unidades_raw.empty:
                         tooltip=nome,
                         popup=folium.Popup(popup_html, max_width=420),
                         icon=folium.Icon(color=status_icon_color(status), icon="info-sign")
-                    ).add_to(lyr_obras)
+                    ).add_to(lyr_unidade)
 
-                lyr_obras.add_to(m2)
+                lyr_unidade.add_to(m2)
 
-            # Ajusta a visão para os Distritos (se disponíveis); senão, ajusta às obras
+            # Ajusta a visão para os Distritos (se disponíveis); senão, ajusta às unidade
             if bounds:
                 (min_lat, min_lon), (max_lat, max_lon) = bounds
                 m2.fit_bounds([[min_lat, min_lon], [max_lat, max_lon]])
@@ -771,13 +771,13 @@ if not df_unidades_raw.empty:
             folium_static(m2, width=1200, height=700)
 
         # Tabela
-        st.markdown("### 📋 Tabela de Obras")
+        st.markdown("### 📋 Tabela de unidade")
         priority = [c_unidade, c_tipo, c_cidade, c_uf]
-        ordered = [c for c in priority if c and c in df_obras.columns]
-        rest = [c for c in df_obras.columns if c not in ordered]
-        st.dataframe(df_obras[ordered + rest] if ordered else df_obras, use_container_width=True)
+        ordered = [c for c in priority if c and c in df_unidade.columns]
+        rest = [c for c in df_unidade.columns if c not in ordered]
+        st.dataframe(df_unidade[ordered + rest] if ordered else df_unidade, use_container_width=True)
     else:
-        st.error(f"❌ Não foi possível carregar o CSV de obras em: {CSV_OBRAS}")
+        st.error(f"❌ Não foi possível carregar o CSV de unidade em: {CSV_unidade}")
 
 
 # =====================================================
