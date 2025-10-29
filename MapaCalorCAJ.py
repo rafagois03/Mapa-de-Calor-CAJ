@@ -775,8 +775,8 @@ with aba2:
         ordered = [c for c in priority if c and c in df_unidades.columns]
         rest = [c for c in df_unidades.columns if c not in ordered]
         st.dataframe(df_unidade[ordered + rest] if ordered else df_unidade, use_container_width=True)
-    else:
-        st.error(f"❌ Não foi possível carregar o CSV de unidade em: {CSV_unidade}")
+        else:
+            st.error(f"❌ Não foi possível carregar o CSV de unidade em: {CSV_unidade}")
 
 
 
