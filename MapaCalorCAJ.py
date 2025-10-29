@@ -574,93 +574,101 @@ with aba2:
         "<p>Visualize o mapa para conhecer nossas unidades de atendimento</p>",
     )
 
-    CSV_OBRAS_CANDIDATES = ["dados/milha_obras.csv", "/mnt/data/milha_obras.csv"]
-    CSV_OBRAS = next((p for p in CSV_OBRAS_CANDIDATES if os.path.exists(p)), CSV_OBRAS_CANDIDATES[0])
+    EXCEL_FILE_CANDIDATES = ["Unidades de Atendimento.xlsx", "dados/Unidades de Atendimento.xlsx", "/mnt/data/Unidades de Atendimento.xlsx"]
+    EXCEL_FILE = next((p for p in EXCEL_FILE_CANDIDATES if os.path.exists(p)), None)
 
-    df_obras_raw = sniff_read_csv(CSV_OBRAS)
+    if EXCEL_FILE is None:
+    st.error("❌ Arquivo 'Unidades de Atendimento.xlsx' não encontrado.")
+    st.stop()
 
-    if not df_obras_raw.empty:
-        # Normaliza colunas
-        colmap = {c: norm_col(c) for c in df_obras_raw.columns}
-        df_obras = df_obras_raw.rename(columns=colmap).copy()
+    try:
+    df_unidades_raw = pd.read_excel(EXCEL_FILE)
+except Exception as e:
+    st.error(f"Erro ao ler o arquivo Excel: {e}")
+    st.stop()
 
-        # Detecta lat/lon
-        lat_col = next((c for c in df_obras.columns if c in {"latitude","lat"}), None)
-        lon_col = next((c for c in df_obras.columns if c in {"longitude","long","lon"}), None)
-        if not lat_col or not lon_col:
-            coords = autodetect_coords(df_obras_raw.copy())
-            if coords:
-                lat_col, lon_col = coords
+if not df_unidades_raw.empty:
+    # Normaliza colunas
+    colmap = {c: norm_col(c) for c in df_unidades_raw.columns}
+    df_obras = df_unidades_raw.rename(columns=colmap).copy()
 
-        if not lat_col or not lon_col:
-            st.error("Não foi possível localizar colunas de latitude/longitude.")
-            st.stop()
+    # Detecta lat/lon (já estão nomeadas como "Latitude" e "Longitude")
+    lat_col = next((c for c in df_unidades.columns if c in {"latitude", "lat"}), None)
+    lon_col = next((c for c in df_unidades.columns if c in {"longitude", "long", "lon"}), None)
+    if not lat_col or not lon_col:
+        coords = autodetect_coords(df_unidades_raw.copy())
+        if coords:
+            lat_col, lon_col = coords
 
-        df_obras["__LAT__"] = to_float_series(df_obras[lat_col])
-        df_obras["__LON__"] = to_float_series(df_obras[lon_col])
+    if not lat_col or not lon_col:
+        st.error("Não foi possível localizar colunas de latitude/longitude.")
+        st.stop()
 
-        # Heurística para corrigir inversão e sinal
-        lat_s = pd.to_numeric(df_obras["__LAT__"], errors="coerce")
-        lon_s = pd.to_numeric(df_obras["__LON__"], errors="coerce")
+    df_unidades["__LAT__"] = to_float_series(df_unidades[lat_col])
+    df_unidades["__LON__"] = to_float_series(df_unidades[lon_col])
 
-        def _pct_inside(a, b):
-            try:
-                m = (a.between(-6.5, -4.5)) & (b.between(-40.5, -38.0))
-                return float(m.mean())
-            except Exception:
-                return 0.0
+    # Heurística para corrigir inversão e sinal — ajustada para o território brasileiro
+    lat_s = pd.to_numeric(df_obras["__LAT__"], errors="coerce")
+    lon_s = pd.to_numeric(df_obras["__LON__"], errors="coerce")
 
-        cands = [
-            ("orig", lat_s, lon_s, _pct_inside(lat_s, lon_s)),
-            ("swap", lon_s, lat_s, _pct_inside(lon_s, lat_s)),
-            ("neg_lon", lat_s, lon_s.mul(-1.0), _pct_inside(lat_s, lon_s.mul(-1.0))),
-            ("swap_neg", lon_s, lat_s.mul(-1.0), _pct_inside(lon_s, lat_s.mul(-1.0))),
-        ]
-        best = max(cands, key=lambda x: x[3])
-        if best[0] != "orig" and best[3] >= cands[0][3]:
-            df_obras["__LAT__"], df_obras["__LON__"] = best[1], best[2]
+    def _pct_inside(a, b):
+        try:
+            # Brasil: lat entre -35 e +5, lon entre -75 e -34
+            m = (a.between(-35.0, 5.0)) & (b.between(-75.0, -34.0))
+            return float(m.mean())
+        except Exception:
+            return 0.0
 
-        df_map = df_obras.dropna(subset=["__LAT__", "__LON__"]).copy()
+    cands = [
+        ("orig", lat_s, lon_s, _pct_inside(lat_s, lon_s)),
+        ("swap", lon_s, lat_s, _pct_inside(lon_s, lat_s)),
+        ("neg_lon", lat_s, lon_s.mul(-1.0), _pct_inside(lat_s, lon_s.mul(-1.0))),
+        ("swap_neg", lon_s, lat_s.mul(-1.0), _pct_inside(lon_s, lat_s.mul(-1.0))),
+    ]
+    best = max(cands, key=lambda x: x[3])
+    if best[0] != "orig" and best[3] >= cands[0][3]:
+        df_obras["__LAT__"], df_obras["__LON__"] = best[1], best[2]
 
-        # Campos para popup/tabela
-        cols = list(df_obras.columns)
-        def pick_norm(*options):
-            return next((c for c in cols if c in [norm_col(o) for o in options]), None)
+    df_map = df_unidades.dropna(subset=["__LAT__", "__LON__"]).copy()
 
-        c_obra    = pick_norm("Obra", "Nome", "Projeto", "Descrição")
-        c_status  = pick_norm("Status", "Situação")
-        c_empresa = pick_norm("Empresa", "Contratada")
-        c_valor   = pick_norm("Valor", "Valor Total", "Custo")
-        c_bairro  = pick_norm("Bairro", "Localidade")
-        c_dtini   = pick_norm("Início", "Data Início", "Inicio")
-        c_dtfim   = pick_norm("Término", "Data Fim", "Termino")
+    # Campos para popup/tabela — adaptados ao Excel
+    cols = list(df_unidades.columns)
+    def pick_norm(*options):
+        return next((c for c in cols if c in [norm_col(o) for o in options]), None)
 
-        st.success(f"✅ **{len(df_map)} obra(s)** com coordenadas válidas encontradas")
+    c_unidade    = pick_norm("Unidade")          # Nome da unidade (ex: General Mills)
+    c_tipo  = pick_norm("Tipo")                  # Tipo: CD, Fábrica, TP, OPL
+    c_cidade = pick_norm("Cidade")               # Cidade como "empresa" visual
+    c_uf  = pick_norm("UF")                      # UF como "bairro"
+    c_dtfim   = None
 
-        # Camadas laterais necessárias
-        base_dir_candidates = ["dados", "/mnt/data"]
-        gj_distritos = load_geojson_any([os.path.join(b, "milha_dist_polig.geojson") for b in base_dir_candidates])
-        gj_sede      = load_geojson_any([os.path.join(b, "Distritos_pontos.geojson") for b in base_dir_candidates])
+    st.success(f"✅ **{len(df_map)} unidade(s) de atendimento** com coordenadas válidas encontradas")
 
-        # Layout fixo: mapa + painel (sem botão de ocultar)
-        col_map, col_panel = st.columns([5, 2], gap="large")
+    # Camadas laterais necessárias (mantidas)
+    base_dir_candidates = ["dados", "/mnt/data"]
+    gj_distritos = load_geojson_any([os.path.join(b, "milha_dist_polig.geojson") for b in base_dir_candidates])
+    gj_sede      = load_geojson_any([os.path.join(b, "Distritos_pontos.geojson") for b in base_dir_candidates])
 
-        # Painel lateral (checkboxes)
-        with col_panel:
-            st.markdown('<div class="sticky-panel">', unsafe_allow_html=True)
-            st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
-            st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
+    # Layout fixo: mapa + painel
+    col_map, col_panel = st.columns([5, 2], gap="large")
 
-            with st.expander("🏗️ Obras", expanded=True):
-                show_obras = st.checkbox("Obras Municipais", value=True, key="obras_markers")
+    # Painel lateral (checkboxes) — renomeado
+    with col_panel:
+        st.markdown('<div class="sticky-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
+        st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
 
-            with st.expander("🗾 Território", expanded=True):
-                show_distritos = st.checkbox("Distritos", value=True, key="obras_distritos")
-                show_sede = st.checkbox("Sede Distritos", value=True, key="obras_sede")
+        with st.expander("🏢 Unidades de Atendimento", expanded=True):
+            show_obras = st.checkbox("Exibir Unidades", value=True, key="obras_markers")
 
-            st.markdown('</div>', unsafe_allow_html=True)
+        with st.expander("🗾 Território", expanded=True):
+            show_distritos = st.checkbox("Distritos", value=True, key="obras_distritos")
+            show_sede = st.checkbox("Sede Distritos", value=True, key="obras_sede")
 
-        # ---------- MAPA FUNCIONAL ----------
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+
+    # ---------- MAPA FUNCIONAL ----------
         with col_map:
             st.markdown("### 🗺️ Mapa Interativo")
 
@@ -716,17 +724,14 @@ with aba2:
                 lyr_obras = folium.FeatureGroup(name="Obras")
                 ignore_cols = {"__LAT__", "__LON__"}
                 for _, r in df_map.iterrows():
-                    nome   = str(r.get(c_obra, "Obra")) if c_obra else "Obra"
-                    status = str(r.get(c_status, "-")) if c_status else "-"
-                    empresa= str(r.get(c_empresa, "-")) if c_empresa else "-"
-                    valor  = br_money(r.get(c_valor)) if c_valor else "-"
-                    bairro = str(r.get(c_bairro, "-")) if c_bairro else "-"
-                    dtini  = str(r.get(c_dtini, "-")) if c_dtini else "-"
-                    dtfim  = str(r.get(c_dtfim, "-")) if c_dtfim else "-"
+                    nome   = str(r.get(c_unidade, "Obra")) if c_unidade else "Obra"
+                    status = str(r.get(c_tipo, "-")) if c_tipo else "-"
+                    empresa= str(r.get(c_cidade, "-")) if c_cidade else "-"
+                    bairro = str(r.get(c_uf, "-")) if c_uf else "-"
 
                     extra_rows = []
                     for c in df_obras.columns:
-                        if c in ignore_cols or c in {c_obra, c_status, c_empresa, c_valor, c_bairro, c_dtini, c_dtfim}:
+                        if c in ignore_cols or c in {c_unidade, c_tipo, c_cidade, c_uf}:
                             continue
                         val = r.get(c, "")
                         if pd.notna(val) and str(val).strip() != "":
@@ -767,7 +772,7 @@ with aba2:
 
         # Tabela
         st.markdown("### 📋 Tabela de Obras")
-        priority = [c_obra, c_status, c_empresa, c_valor, c_bairro, c_dtini, c_dtfim]
+        priority = [c_unidade, c_tipo, c_cidade, c_uf]
         ordered = [c for c in priority if c and c in df_obras.columns]
         rest = [c for c in df_obras.columns if c not in ordered]
         st.dataframe(df_obras[ordered + rest] if ordered else df_obras, use_container_width=True)
