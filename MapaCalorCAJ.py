@@ -488,8 +488,8 @@ with aba1:
             """
             <div class="stat-card fade-in">
                 <div class="feature-icon">📊</div>
-                <div class="stat-number">100+</div>
-                <div class="stat-label">Dados Geoespaciais</div>
+                <div class="stat-number">10.000+</div>
+                <div class="stat-label">Entregas</div>
             </div>
             """, unsafe_allow_html=True
         )
@@ -497,9 +497,9 @@ with aba1:
         st.markdown(
             """
             <div class="stat-card fade-in">
-                <div class="feature-icon">🏗️</div>
-                <div class="stat-number">50+</div>
-                <div class="stat-label">Obras Monitoradas</div>
+                <div class="feature-icon">〽️</div>
+                <div class="stat-number">10.000+</div>
+                <div class="stat-label">Peso (ton)</div>
             </div>
             """, unsafe_allow_html=True
         )
@@ -507,9 +507,9 @@ with aba1:
         st.markdown(
             """
             <div class="stat-card fade-in">
-                <div class="feature-icon">💧</div>
-                <div class="stat-number">30+</div>
-                <div class="stat-label">Recursos Hídricos</div>
+                <div class="feature-icon">💲</div>
+                <div class="stat-number">30.000+</div>
+                <div class="stat-label">Faturamento (R$)</div>
             </div>
             """, unsafe_allow_html=True
         )
@@ -553,25 +553,23 @@ with aba1:
         render_card(
             "<h3>🗺️ Entenda o nosso atendimento</h3>",
             (
-                "<p>No <strong>Painel de Obras</strong> monitore:</p>"
+                "<p>No painel <strong>Mapa de Calor</strong> você terá uma visão em formato mapa de calor dos dados:</p>"
                 "<ul>"
-                "<li>Status atual de cada projeto municipal</li>"
-                "<li>Localização precisa no mapa</li>"
-                "<li>Investimentos e prazos</li>"
-                "<li>Empresas responsáveis</li>"
-                "<li>Histórico de andamento</li>"
+                "<li>Entregas</li>"
+                "<li>Peso</li>"
+                "<li>Faturamento</li>"
                 "</ul>"
             )
         )
 
 # =====================================================
-# 2) Painel de Obras - COM MAPAS FUNCIONAIS
+# 2) Malha de Transportes - COM MAPAS FUNCIONAIS
 # =====================================================
 with aba2:
     # Cabeçalho em card consolidado (um único bloco)
     render_card(
-        "<h2>🏗️ Painel de Obras Municipais</h2>",
-        "<p>Visualize e acompanhe o andamento das obras públicas em Milhã</p>",
+        "<h2>🧭 Malha de Transportes</h2>",
+        "<p>Visualize o mapa para conhecer nossas unidades de atendimento</p>",
     )
 
     CSV_OBRAS_CANDIDATES = ["dados/milha_obras.csv", "/mnt/data/milha_obras.csv"]
@@ -776,7 +774,7 @@ with aba2:
 
 
 # =====================================================
-# 3) Milhã em Mapas — FERRAMENTAS PADRONIZADAS
+# 3) Mapa de Calor — FERRAMENTAS PADRONIZADAS
 # =====================================================
 with aba3:
     # Import robusto (local) para capturar viewport quando possível
@@ -787,8 +785,8 @@ with aba3:
         _HAS_ST_FOLIUM = False
 
     render_card(
-        "<h2>🗺️ Milhã em Mapas</h2>",
-        "<p>Explore as camadas territoriais, de infraestrutura e recursos hídricos do município</p>",
+        "<h2>🗺️ Mapa de Calor</h2>",
+        "<p>Explore as camadas para compreender a distribuição de entregas, peso e faturamento</p>",
     )
 
     # Painel Fixo
@@ -849,7 +847,7 @@ with aba3:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # =======================
-    # MAPA (usando mesma abordagem da aba Obras)
+    # MAPA (usando mesma abordagem da aba Unidades de Atendimento)
     # =======================
     with col_map:
         st.markdown("### 🗺️ Mapa Interativo")
@@ -1145,8 +1143,8 @@ st.markdown("---")
 st.markdown(
     f"""
     <div style='text-align: center; color: {COLORS["text_light"]}; padding: 2rem;'>
-        <p><strong>ATLAS Geoespacial de Milhã</strong> - Desenvolvido para transparência e gestão pública eficiente</p>
-        <p style='font-size: 0.9rem;'>© 2024 Prefeitura Municipal de Milhã</p>
+        <p><strong>Atlas Geoespacial de Transportes</strong> - Desenvolvido para transparência e planejamento estratégico</p>
+        <p style='font-size: 0.9rem;'>© 2025 Transporte Corporativo</p>
     </div>
     """,
     unsafe_allow_html=True
