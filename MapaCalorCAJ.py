@@ -546,6 +546,7 @@ with aba1:
                 "<li>Centro Fabril</li>"
                 "<li>Transit Points (Terceirizados)</li>"
                 "<li>Operadores Logísticos de CrossDocking(Terceirizados)</li>"
+                "<li>Copacker</li>"
                 "</ul>"
             )
         )
