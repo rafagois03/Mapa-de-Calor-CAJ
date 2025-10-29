@@ -543,6 +543,7 @@ with aba1:
                 "<p>Na aba <strong>'Malha de Transportes'</strong> você encontrará:</p>"
                 "<ul>"
                 "<li>Centros de Distribuição da General Mills</li>"
+                "<li>Centro Fabril</li>"
                 "<li>Transit Points (Terceirizados)</li>"
                 "<li>Operadores Logísticos de CrossDocking(Terceirizados)</li>"
                 "</ul>"
