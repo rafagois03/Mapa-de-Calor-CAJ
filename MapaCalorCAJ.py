@@ -12,7 +12,7 @@ import unicodedata
 # Configuração inicial com tema personalizado
 # =====================================================
 st.set_page_config(
-    page_title="ATLAS • Milhã", 
+    page_title="Mapa de Calor - General Mills • Cajamar > São Paulo", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -248,10 +248,10 @@ def create_header():
         f"""
         <div class="main-header fade-in">
             <div class="header-content">
-                <img src="https://i.ibb.co/7Nr6N5bm/brasao-milha.png" alt="Brasão de Milhã" class="header-logo">
+                <img src="https://logospng.org/wp-content/uploads/general-mills.png" alt="Logo da General Mills" class="header-logo">
                 <div class="header-text">
-                    <h1>ATLAS Geoespacial de Milhã</h1>
-                    <p>Visualize dados territoriais, obras públicas e infraestrutura municipal de forma interativa</p>
+                    <h1>Mapa de Calor - General Mills - Cajamar > São Paulo</h1>
+                    <p>Visualize dados de entregas, peso e faturamento da unidade de forma interativa</p>
                 </div>
             </div>
         </div>
@@ -413,7 +413,7 @@ css_global()
 create_header()
 
 # Abas principais
-aba1, aba2, aba3 = st.tabs(["🏠 Página Inicial", "🏗️ Painel de Obras", "🗺️ Milhã em Mapas"])
+aba1, aba2, aba3 = st.tabs(["🏠 Página Inicial", "🧭 Malha de Transportes", "🗺️ Mapa de Calor"])
 
 # =====================================================
 # 1) Página Inicial - Atualizada (com hover animado nos KPI)
@@ -520,18 +520,16 @@ with aba1:
       
     # 👉 Painel de boas-vindas
     render_card(
-        "<h2>🌟 Bem-vindo ao ATLAS Geoespacial de Milhã</h2>",
+        "<h2>🌟 Bem-vindo ao Atlas Geoespacial de Transportes - General Mills do Brasil</h2>",
         """
         <p>
-            Esta plataforma integra <strong>dados geoespaciais</strong> do município para apoiar a tomada de decisões públicas, 
-            qualificar projetos urbanos e aproximar a gestão municipal dos cidadãos. 
+            Esta plataforma integra <strong>dados geoespaciais</strong> de entregas, pesos e faturamentos para apoiar a toma de deciões estratégias. 
         </p>
         <h3>🎯 Objetivos Principais:</h3>
         <ul>
-            <li><strong>Transparência</strong>: Disponibilizar informações públicas de forma acessível</li>
-            <li><strong>Planejamento</strong>: Auxiliar no planejamento urbano e territorial</li>
-            <li><strong>Monitoramento</strong>: Acompanhar obras e projetos em tempo real</li>
-            <li><strong>Participação</strong>: Engajar a comunidade no desenvolvimento municipal</li>
+            <li><strong>Informação</strong>: Disponibilizar dados de forma acessível e objetiva</li>
+            <li><strong>Planejamento</strong>: Apoiar decisões baseadas em dados reais de desempenho e cobertura</li>
+            <li><strong>Participação</strong>: Engajar os colaboradores às transformações da malha logística</li>
         </ul>
         """
     )
@@ -540,21 +538,20 @@ with aba1:
     
     with colA:
         render_card(
-            "<h3>🗺️ Explore o Território</h3>",
+            "<h3>🧭 Explore as Unidades de Atendimento</h3>",
             (
-                "<p>Na aba <strong>'Milhã em Mapas'</strong> você encontra:</p>"
+                "<p>Na aba <strong>'Malha de Transportes'</strong> você encontrará:</p>"
                 "<ul>"
-                "<li>Divisões territoriais (Distritos e Localidades)</li>"
-                "<li>Infraestrutura pública (Escolas e Unidades de Saúde)</li>"
-                "<li>Recursos hídricos (Poços e Tecnologias Sociais)</li>"
-                "<li>Camadas interativas e ferramentas de medição</li>"
+                "<li>Centros de Distribuição da General Mills</li>"
+                "<li>Transit Points (Terceirizados)</li>"
+                "<li>Operadores Logísticos de CrossDocking(Terceirizados)</li>"
                 "</ul>"
             )
         )
     
     with colB:
         render_card(
-            "<h3>🏗️ Acompanhe as Obras</h3>",
+            "<h3>🗺️ Entenda o nosso atendimento</h3>",
             (
                 "<p>No <strong>Painel de Obras</strong> monitore:</p>"
                 "<ul>"
