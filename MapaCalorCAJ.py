@@ -1014,6 +1014,8 @@ with aba3:
                 
                 # Criar popup simplificado conforme solicitado
                 popup_content = f"""
+
+"""
                 <div style='font-family:Arial;font-size:12px;max-width:300px'>
                     <b>Requerente:</b> {props.get('REQUERENTE', 'N/A')}<br>
                     <b>Tipo Manancial:</b> {props.get('TIPO MANANCIAL', 'N/A')}<br>
@@ -1023,7 +1025,9 @@ with aba3:
                     <b>Volume Outorgado:</b> {props.get('VOLUME OUTORGADO (m³)', 'N/A')} m³
                 </div>
                 """
-                
+
+"""
+
                 # Definir cor baseada no tipo de uso
                 tipo_uso = props.get('TIPO DE USO', '').upper()
                 if 'IRRIGACAO' in tipo_uso:
