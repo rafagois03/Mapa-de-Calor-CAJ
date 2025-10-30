@@ -248,7 +248,7 @@ def create_header():
         f"""
         <div class="main-header fade-in">
             <div class="header-content">
-                <img src="https://logospng.org/wp-content/uploads/general-mills.png" alt="Logo da General Mills" class="header-logo">
+                <img src="https://commons.wikimedia.org/wiki/File:General_Mills_logo.svg" alt="Logo da General Mills" class="header-logo">
                 <div class="header-text">
                     <h1>Mapa de Calor - General Mills - Cajamar > São Paulo</h1>
                     <p>Visualize dados de entregas, peso e faturamento da unidade de forma interativa</p>
