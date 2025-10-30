@@ -747,29 +747,23 @@ with col_panel:
     folium_static(m2, width=1200, height=700)
 
     
-
     # ---------- MAPA FUNCIONAL ----------
 
 
+    # Função de cor por tipo
+    def get_icon_color(tipo):
+        t = str(tipo).strip().lower()
+        if "cd" == t:
+            return "blue"
+        elif "fábrica" in t or "fabrica" in t:
+            return "darkred"
+        elif "opl" == t:
+            return "purple"
+        elif "tp" == t:
+            return "orange"
+        return "gray"
 
-        # Função de cor por tipo
-        def get_icon_color(tipo):
-            t = str(tipo).strip().lower()
-            if "cd" == t:
-                return "blue"
-            elif "fábrica" in t or "fabrica" in t:
-                return "darkred"
-            elif "opl" == t:
-                return "purple"
-            elif "tp" == t:
-                return "orange"
-            return "gray"
-
-       
-
-
-
-
+   
 # ========== TABELA ==========
     st.markdown("### 📋 Tabela de Unidades")
     display_cols = [c for c in [c_tipo, c_abastec, c_nome, c_cidade, c_uf] if c]
