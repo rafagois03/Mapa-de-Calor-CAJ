@@ -779,7 +779,7 @@ with aba2:
 
 with aba3:
     render_card(
-        "<h2>🗺️ Mapa de Bolhas</h2>",
+        "<h2>🗺️ Mapa de Calor - Dados de F25</h2>",
         "<p>Visualize a distribuição geográfica de entregas, peso e faturamento por região</p>",
     )
 
@@ -844,7 +844,7 @@ with aba3:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ========== MAPA DE BOLHAS ==========
+    # ========== MAPA DE CALOR ==========
     with col_map:
         st.markdown("### 🗺️ Mapa Interativo")
 
