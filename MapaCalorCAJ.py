@@ -936,15 +936,6 @@ with aba3:
         folium.LayerControl().add_to(m3)
         folium_static(m3, width=1200, height=700)
 
-    # ========== TABELA ==========
-    st.markdown("### 📋 Dados do Histórico")
-    cols_to_show = ["__LAT__", "__LON__"]
-    for c in [c_entregas, c_peso, c_fat]:
-        if c and c in df.columns:
-            cols_to_show.append(c)
-    st.dataframe(df[cols_to_show], use_container_width=True)
-
-
 # =====================================================
 # Rodapé
 # =====================================================
