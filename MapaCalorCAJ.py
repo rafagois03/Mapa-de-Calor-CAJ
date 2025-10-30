@@ -574,6 +574,7 @@ with aba2:
         "<p>Visualize o mapa para conhecer nossas unidades de atendimento</p>",
     )
 
+    # Carrega o arquivo Excel da pasta Github
     EXCEL_FILE_CANDIDATES = ["Unidades de Atendimento.xlsx", "dados/Unidades de Atendimento.xlsx", "/mnt/data/Unidades de Atendimento.xlsx"]
     EXCEL_FILE = next((p for p in EXCEL_FILE_CANDIDATES if os.path.exists(p)), None)
 
@@ -604,12 +605,12 @@ with aba2:
             st.error("Não foi possível localizar colunas de latitude/longitude.")
             st.stop()
 
-    df_unidades["__LAT__"] = to_float_series(df_unidades[lat_col])
-    df_unidades["__LON__"] = to_float_series(df_unidades[lon_col])
+    dt["__LAT__"] = to_float_series(df[lat_col])
+    df["__LON__"] = to_float_series(df[lon_col])
 
     # Heurística para corrigir inversão e sinal — ajustada para o território brasileiro
-    lat_s = pd.to_numeric(df_unidade["__LAT__"], errors="coerce")
-    lon_s = pd.to_numeric(df_unidade["__LON__"], errors="coerce")
+    lat_s = pd.to_numeric(df["__LAT__"], errors="coerce")
+    lon_s = pd.to_numeric(df["__LON__"], errors="coerce")
 
     def _pct_inside(a, b):
         try:
@@ -627,26 +628,27 @@ with aba2:
     ]
     best = max(cands, key=lambda x: x[3])
     if best[0] != "orig" and best[3] >= cands[0][3]:
-        df_unidade["__LAT__"], df_unidade["__LON__"] = best[1], best[2]
+        df["__LAT__"], df["__LON__"] = best[1], best[2]
 
-    df_map = df_unidades.dropna(subset=["__LAT__", "__LON__"]).copy()
+    df_map = df.dropna(subset=["__LAT__", "__LON__"]).copy()
 
     # Campos para popup/tabela — adaptados ao Excel
-    cols = list(df_unidades.columns)
+    cols = list(df_map.columns)
     def pick_norm(*options):
         return next((c for c in cols if c in [norm_col(o) for o in options]), None)
 
-    c_unidade    = pick_norm("Unidade")          # Nome da unidade (ex: General Mills)
+    c_nome    = pick_norm("Nome da Unidade", "Unidade")          # Nome da unidade (ex: General Mills)
     c_tipo  = pick_norm("Tipo")                  # Tipo: CD, Fábrica, TP, OPL
+    c_abastec  = pick_norm("Abastecedor")
     c_cidade = pick_norm("Cidade")               # Cidade como "empresa" visual
     c_uf  = pick_norm("UF")                      # UF como "bairro"
 
     st.success(f"✅ **{len(df_map)} unidade(s) de atendimento** com coordenadas válidas encontradas")
 
     # Camadas laterais necessárias (mantidas)
-    base_dir_candidates = ["dados", "/mnt/data"]
-    gj_distritos = load_geojson_any([os.path.join(b, "milha_dist_polig.geojson") for b in base_dir_candidates])
-    gj_sede      = load_geojson_any([os.path.join(b, "Distritos_pontos.geojson") for b in base_dir_candidates])
+    #base_dir_candidates = ["dados", "/mnt/data"]
+    #gj_distritos = load_geojson_any([os.path.join(b, "milha_dist_polig.geojson") for b in base_dir_candidates])
+    #gj_sede      = load_geojson_any([os.path.join(b, "Distritos_pontos.geojson") for b in base_dir_candidates])
 
     # Layout fixo: mapa + painel
     col_map, col_panel = st.columns([5, 2], gap="large")
@@ -672,113 +674,94 @@ with aba2:
         with col_map:
             st.markdown("### 🗺️ Mapa Interativo")
 
-            # Centralização priorizando os Distritos
-            bounds = None
-            if gj_distritos:
-                b = geojson_bounds(gj_distritos)  # ((min_lat,min_lon),(max_lat,max_lon))
-                if b:
-                    bounds = b
-                    (min_lat, min_lon), (max_lat, max_lon) = b
-                    center_lat = (min_lat + max_lat) / 2.0
-                    center_lon = (min_lon + max_lon) / 2.0
-                    default_center = [center_lat, center_lon]
-                else:
-                    default_center = [-5.680, -39.200]
-            else:
-                default_center = [-5.680, -39.200]
-
-            m2 = folium.Map(location=default_center, zoom_start=12, tiles=None)
+            # Centraliza no Brasil
+            m2 = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles=None)
             add_base_tiles(m2)
-            Fullscreen(position='topright', title='Tela Cheia', title_cancel='Sair', force_separate_button=True).add_to(m2)
-            m2.add_child(MeasureControl(primary_length_unit="meters", secondary_length_unit="kilometers", primary_area_unit="hectares"))
+            Fullscreen(position='topright').add_to(m2)
+            MeasureControl().add_to(m2)
             MousePosition().add_to(m2)
             Draw(export=True).add_to(m2)
 
-            # Camada OPL
-            if show_opl and gj_opl:
-                folium.GeoJson(
-                    gj_opl,
-                    name="Operadores Logísticos",
-                    style_function=lambda x: {"fillColor": "#9fe2fc", "fillOpacity": 0.1, "color": "#000000", "weight": 1},
-                ).add_to(m2)
 
-            # Camada TPs
-            if show_tp and gj_tp:
-                lyr_sede = folium.FeatureGroup(name="Transit Point")
-                for f in gj_tp.get("features", []):
-                    x, y = f["geometry"]["coordinates"]
-                    nome = f.get("properties", {}).get("nome_do_tp", "TPs")
-                    folium.Marker([y, x], tooltip=nome, icon=folium.Icon(color="darkgreen", icon="home")).add_to(lyr_sede)
-                lyr_sede.add_to(m2)
+            # Função de cor por tipo
+            def get_icon_color(tipo):
+                t = str(tipo).strip().lower()
+                if "cd" == t:
+                    return "blue"
+                elif "fábrica" in t or "fabrica" in t:
+                    return "darkred"
+                elif "opl" == t:
+                    return "purple"
+                elif "tp" == t:
+                    return "orange"
+                return "gray"
+    
+            # Adiciona marcadores conforme filtros
+            for _, row in df_map.iterrows():
+                tipo_val = str(row.get(c_tipo, "")).strip()
+                if not tipo_val:
+                    continue
+                
+            # Decide se exibe com base nos checkboxes
+            exibir = False
+            if tipo_val == "CD" and show_cd:
+                exibir = True
+            elif tipo_val == "Fábrica" and show_fabrica:
+                exibir = True
+            elif tipo_val == "TP" and show_tp:
+                exibir = True
+            elif tipo_val == "OPL" and show_opl:
+                exibir = True
 
-            # Camada CDs
-            if show_unidade and not df_map.empty:
-                def status_icon_color(status_val: str):
-                    s = (str(status_val) if status_val is not None else "").strip().lower()
-                    if any(k in s for k in ["conclu", "finaliz"]):     return "green"
-                    if any(k in s for k in ["execu", "andamento"]):    return "orange"
-                    if any(k in s for k in ["paralis", "suspens"]):    return "red"
-                    if any(k in s for k in ["planej", "licita", "proj"]): return "blue"
-                    return "gray"
+            if not exibir:
+                continue
 
-                lyr_unidade = folium.FeatureGroup(name="unidade")
-                ignore_cols = {"__LAT__", "__LON__"}
-                for _, r in df_map.iterrows():
-                    nome   = str(r.get(c_unidade, "Unidade")) if c_unidade else "Unidade"
-                    status = str(r.get(c_tipo, "-")) if c_tipo else "-"
-                    empresa= str(r.get(c_cidade, "-")) if c_cidade else "-"
-                    bairro = str(r.get(c_uf, "-")) if c_uf else "-"
+            nome      = str(row.get(c_nome, "Unidade")) if c_nome else "Unidade"
+            abastec   = str(row.get(c_abastec, "-")) if c_abastec else "-"
+            cidade    = str(row.get(c_cidade, "-")) if c_cidade else "-"
+            uf        = str(row.get(c_uf, "-")) if c_uf else "-"
 
-                    extra_rows = []
-                    for c in df_unidades.columns:
-                        if c in ignore_cols or c in {c_unidade, c_tipo, c_cidade, c_uf}:
-                            continue
-                        val = r.get(c, "")
-                        if pd.notna(val) and str(val).strip() != "":
-                            extra_rows.append(f"<tr><td><b>{c}</b></td><td>{val}</td></tr>")
-                    extra_html = "".join(extra_rows)
+            popup_html = f"""
+            <div style="font-family:Arial; font-size:13px">
+                <h4 style="margin:4px 0 8px 0">📍 {nome}</h4>
+                <p><b>Tipo:</b> {tipo_val}</p>
+                <p><b>Abastecido por:</b> {abastec}</p>
+                <p><b>Localização:</b> {cidade} - {uf}</p>
+            </div>
+            """)
 
-                    popup_html = (
-                        "<div style='font-family:Arial; font-size:13px'>"
-                        f"<h4 style='margin:4px 0 8px 0'>🧱 {nome}</h4>"
-                        f"<p style='margin:0 0 6px'><b>Status:</b> {tipo}</p>"
-                        f"<p style='margin:0 0 6px'><b>Empresa:</b> {unidade}</p>"
-                        f"<p style='margin:0 0 6px'><b>Valor:</b> {cidade}</p>"
-                        f"<p style='margin:0 0 6px'><b>Bairro/Localidade:</b> {uf}</p>"
-                        + (f"<table border='1' cellpadding='4' cellspacing='0' style='border-collapse:collapse; margin-top:6px'>{extra_html}</table>" if extra_html else "")
-                        + "</div>"
-                    )
-
-                    folium.Marker(
-                        location=[r["__LAT__"], r["__LON__"]],
-                        tooltip=nome,
-                        popup=folium.Popup(popup_html, max_width=420),
-                        icon=folium.Icon(color=status_icon_color(tipo), icon="info-sign")
-                    ).add_to(lyr_unidade)
-
+         folium.Marker(
+                location=[row["__LAT__"], row["__LON__"]],
+                tooltip=f"{tipo_val}: {nome}",
+                popup=folium.Popup(popup_html, max_width=300),
+                icon=folium.Icon(color=get_icon_color(tipo_val), icon="building", prefix="fa")
+            ).add_to(m2)
                 lyr_unidade.add_to(m2)
 
-            # Ajusta a visão para os Distritos (se disponíveis); senão, ajusta às unidade
-            if bounds:
-                (min_lat, min_lon), (max_lat, max_lon) = bounds
-                m2.fit_bounds([[min_lat, min_lon], [max_lat, max_lon]])
-            elif not df_map.empty:
-                m2.fit_bounds([[df_map["__LAT__"].min(), df_map["__LON__"].min()],
-                               [df_map["__LAT__"].max(), df_map["__LON__"].max()]])
-
-            folium.LayerControl(collapsed=True).add_to(m2)
-            folium_static(m2, width=1200, height=700)
-
-        # Tabela
-        st.markdown("### 📋 Tabela de unidade")
-        priority = [c_unidade, c_tipo, c_cidade, c_uf]
-        ordered = [c for c in priority if c and c in df_unidades.columns]
-        rest = [c for c in df_unidades.columns if c not in ordered]
-        st.dataframe(df_unidade[ordered + rest] if ordered else df_unidade, use_container_width=True)
-        else:
-            st.error(f"❌ Não foi possível carregar o CSV de unidade em: {CSV_unidade}")
+        # Ajusta zoom para abranger todas as unidades visíveis
+        if show_cd or show_fabrica or show_tp or show_opl:
+            visible_df = df_map[
+                ((df_map[c_tipo] == "CD") & show_cd) |
+                ((df_map[c_tipo] == "Fábrica") & show_fabrica) |
+                ((df_map[c_tipo] == "TP") & show_tp) |
+                ((df_map[c_tipo] == "OPL") & show_opl)
+            ]
+            if not visible_df.empty:
+                sw = [visible_df["__LAT__"].min(), visible_df["__LON__"].min()]
+                ne = [visible_df["__LAT__"].max(), visible_df["__LON__"].max()]
+                m2.fit_bounds([sw, ne], padding=(30, 30))
+        
+        folium.LayerControl(collapsed=False).add_to(m2)
+        folium_static(m2, width=1200, height=700)
 
 
+# ========== TABELA ==========
+    st.markdown("### 📋 Tabela de Unidades")
+    display_cols = [c for c in [c_tipo, c_abastec, c_nome, c_cidade, c_uf] if c]
+    if display_cols:
+        st.dataframe(df_map[display_cols], use_container_width=True)
+    else:
+        st.dataframe(df_map, use_container_width=True)
 
 
 
