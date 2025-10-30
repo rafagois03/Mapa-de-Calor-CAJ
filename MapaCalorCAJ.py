@@ -728,7 +728,7 @@ with aba2:
                 <p><b>Abastecido por:</b> {abastec}</p>
                 <p><b>Localização:</b> {cidade} - {uf}</p>
             </div>
-            """)
+            """
 
          folium.Marker(
                 location=[row["__LAT__"], row["__LON__"]],
@@ -769,7 +769,7 @@ with aba2:
 # 3) Mapa de Calor — FERRAMENTAS PADRONIZADAS
 # ==============================================================================================================================================================
 
-
+"""
 with aba3:
     # Import robusto (local) para capturar viewport quando possível
     try:
@@ -1128,7 +1128,7 @@ with aba3:
         else:
             # Fallback: sem captura de viewport 
             folium_static(m3, width=1200, height=700)
-
+"""
 
 # =====================================================
 # Rodapé
