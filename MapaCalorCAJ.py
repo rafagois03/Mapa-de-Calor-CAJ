@@ -657,9 +657,24 @@ with aba2:
 
     # MAPA E CAMADAS
     # Layout fixo: mapa + painel
+    
     col_map, col_panel = st.columns([5, 2], gap="large")
 
-
+    with col_panel:
+        st.markdown('<div class="sticky-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
+        st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
+    
+        with st.expander("🏭 Unidades General Mills", expanded=True):
+            show_cd = st.checkbox("Centros de Distribuição (CD)", value=True, key="show_cd")
+            show_fabrica = st.checkbox("Fábricas", value=True, key="show_fabrica")           
+    
+        with st.expander("Unidades Terceirizadas", expanded=True):
+            show_tp = st.checkbox("Transit Point", value=True, key="unidade_tp")
+            show_opl = st.checkbox("OPL", value=True, key="unidade_opl")
+    
+        st.markdown('</div>', unsafe_allow_html=True)
+    
     with col_map:
         st.markdown("### 🗺️ Mapa Interativo")
 
@@ -686,87 +701,62 @@ with aba2:
             return "gray"
 
 
-
-    # CONTROLES DE CAMADAS
-# Painel lateral (checkboxes) — renomeado
-with col_panel:
-    st.markdown('<div class="sticky-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
-    st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
-
-    with st.expander("🏭 Unidades General Mills", expanded=True):
-        show_cd = st.checkbox("Centros de Distribuição (CD)", value=True, key="show_cd")
-        show_fabrica = st.checkbox("Fábricas", value=True, key="show_fabrica")           
-
-    with st.expander("Unidades Terceirizadas", expanded=True):
-        show_tp = st.checkbox("Transit Point", value=True, key="unidade_tp")
-        show_opl = st.checkbox("OPL", value=True, key="unidade_opl")
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-     # Adiciona marcadores conforme filtros
-    for _, row in df_map.iterrows():
-        tipo_val = str(row.get(c_tipo, "")).strip()
-        if not tipo_val:
-            continue
+         # Adiciona marcadores conforme filtros
+        for _, row in df_map.iterrows():
+            tipo_val = str(row.get(c_tipo, "")).strip()
+            if not tipo_val:
+                continue
         
-        # Decide se exibe com base nos checkboxes
-        exibir = False
-        if tipo_val == "CD" and show_cd:
-            exibir = True
-        elif tipo_val == "Fábrica" and show_fabrica:
-            exibir = True
-        elif tipo_val == "TP" and show_tp:
-            exibir = True
-        elif tipo_val == "OPL" and show_opl:
-            exibir = True
-
-        if not exibir:
-            continue
-
-        nome      = str(row.get(c_nome, "Unidade")) if c_nome else "Unidade"
-        abastec   = str(row.get(c_abastec, "-")) if c_abastec else "-"
-        cidade    = str(row.get(c_cidade, "-")) if c_cidade else "-"
-        uf        = str(row.get(c_uf, "-")) if c_uf else "-"
-
-        popup_html = f"""
-        <div style="font-family:Arial; font-size:13px">
-            <h4 style="margin:4px 0 8px 0">📍 {nome}</h4>
-            <p><b>Tipo:</b> {tipo_val}</p>
-            <p><b>Abastecido por:</b> {abastec}</p>
-            <p><b>Localização:</b> {cidade} - {uf}</p>
-        </div>
-        """
-
-        folium.Marker(
-            location=[row["__LAT__"], row["__LON__"]],
-            tooltip=f"{tipo_val}: {nome}",
-            popup=folium.Popup(popup_html, max_width=300),
-            icon=folium.Icon(color=get_icon_color(tipo_val), icon="building", prefix="fa")
-        ).add_to(m2)
-
-    # Ajusta zoom para abranger todas as unidades visíveis
-    if show_cd or show_fabrica or show_tp or show_opl:
-        visible_df = df_map[
-            ((df_map[c_tipo] == "CD") & show_cd) |
-            ((df_map[c_tipo] == "Fábrica") & show_fabrica) |
-            ((df_map[c_tipo] == "TP") & show_tp) |
-            ((df_map[c_tipo] == "OPL") & show_opl)
-        ]
-        if not visible_df.empty:
-            sw = [visible_df["__LAT__"].min(), visible_df["__LON__"].min()]
-            ne = [visible_df["__LAT__"].max(), visible_df["__LON__"].max()]
-            m2.fit_bounds([sw, ne], padding=(30, 30))
+            # Decide se exibe com base nos checkboxes
+            exibir = False
+            if tipo_val == "CD" and show_cd:
+                exibir = True
+            elif tipo_val == "Fábrica" and show_fabrica:
+                exibir = True
+            elif tipo_val == "TP" and show_tp:
+                exibir = True
+            elif tipo_val == "OPL" and show_opl:
+                exibir = True
     
-    folium.LayerControl(collapsed=False).add_to(m2)
-    folium_static(m2, width=1200, height=700)
+            if not exibir:
+                continue
 
+            nome      = str(row.get(c_nome, "Unidade")) if c_nome else "Unidade"
+            abastec   = str(row.get(c_abastec, "-")) if c_abastec else "-"
+            cidade    = str(row.get(c_cidade, "-")) if c_cidade else "-"
+            uf        = str(row.get(c_uf, "-")) if c_uf else "-"
+
+            popup_html = f"""
+            <div style="font-family:Arial; font-size:13px">
+                <h4 style="margin:4px 0 8px 0">📍 {nome}</h4>
+                <p><b>Tipo:</b> {tipo_val}</p>
+                <p><b>Abastecido por:</b> {abastec}</p>
+                <p><b>Localização:</b> {cidade} - {uf}</p>
+            </div>
+            """
+
+            folium.Marker(
+                location=[row["__LAT__"], row["__LON__"]],
+                tooltip=f"{tipo_val}: {nome}",
+                popup=folium.Popup(popup_html, max_width=300),
+                icon=folium.Icon(color=get_icon_color(tipo_val), icon="building", prefix="fa")
+            ).add_to(m2)
+
+        # Ajusta zoom para abranger todas as unidades visíveis
+        if show_cd or show_fabrica or show_tp or show_opl:
+            visible_df = df_map[
+                ((df_map[c_tipo] == "CD") & show_cd) |
+                ((df_map[c_tipo] == "Fábrica") & show_fabrica) |
+                ((df_map[c_tipo] == "TP") & show_tp) |
+                ((df_map[c_tipo] == "OPL") & show_opl)
+            ]
+            if not visible_df.empty:
+                sw = [visible_df["__LAT__"].min(), visible_df["__LON__"].min()]
+                ne = [visible_df["__LAT__"].max(), visible_df["__LON__"].max()]
+                m2.fit_bounds([sw, ne], padding=(30, 30))
     
-    # ---------- MAPA FUNCIONAL ----------
-
-
-
+        folium.LayerControl(collapsed=False).add_to(m2)
+        folium_static(m2, width=1200, height=700)
    
 # ========== TABELA ==========
     st.markdown("### 📋 Tabela de Unidades")
