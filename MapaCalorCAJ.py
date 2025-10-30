@@ -844,7 +844,7 @@ with aba3:
     with col3:
         show_fat      = st.checkbox("💰 Faturamento (R$)", value=False, key="show_fat")
     
-    # ========== MAPA DE CALOR ==========
+# ========== MAPA DE BOLHAS ==========
     # Cria o mapa
     m3 = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles=None)
     add_base_tiles(m3)
@@ -852,32 +852,33 @@ with aba3:
     MeasureControl().add_to(m3)
     MousePosition().add_to(m3)
     Draw(export=True).add_to(m3)
-
-
-    import numpy as np
-
-    # Função para escalar o raio (evita bolhas gigantes)
-    def scale_radius(value, max_radius=40, log_scale=True):
-        if pd.isna(value) or value <= 0:
+    
+    # Pré-calcula os valores máximos para escalar as bolhas
+    max_entregas = df[c_entregas].max() if c_entregas and c_entregas in df.columns else 1
+    max_peso     = df[c_peso].max()     if c_peso     and c_peso     in df.columns else 1
+    max_fat      = df[c_fat].max()      if c_fat      and c_fat      in df.columns else 1
+    
+    # Função segura para calcular o raio (em pixels, depois convertido para metros)
+    def scale_radius(value, max_val, max_radius_meters=30000):
+        if pd.isna(value) or value <= 0 or max_val <= 0:
             return 0
-        if log_scale:
-            return max(2, min(max_radius, 5 * (1 + np.log1p(value) / 10)))
-        else:
-            return max(2, min(max_radius, value / df[col].max() * max_radius))
-            
-    # Adiciona camadas conforme seleção
+        # Escala linear: valor proporcional ao máximo
+        radius_meters = (value / max_val) * max_radius_meters
+        return max(500, min(radius_meters, max_radius_meters))  # mínimo de 500m para visibilidade
+    
     added_any = False
-
+    
+    # --- Camada: Entregas ---
     if show_entregas and c_entregas and c_entregas in df.columns:
         for _, row in df.iterrows():
             val = row[c_entregas]
-            if pd.isna(val) or val <= 0:
+            radius = scale_radius(val, max_entregas)
+            if radius <= 0:
                 continue
-            radius = scale_radius(val)
             popup = f"<b>Entregas:</b> {val:,.0f}"
             folium.Circle(
                 location=[row["__LAT__"], row["__LON__"]],
-                radius=radius * 1000,  # metros
+                radius=radius,  # já em metros
                 color="#1E3A8A",
                 fill=True,
                 fillColor="#1E3A8A",
@@ -886,17 +887,18 @@ with aba3:
                 tooltip=f"Entregas: {val:,.0f}"
             ).add_to(m3)
         added_any = True
-
+    
+    # --- Camada: Peso ---
     if show_peso and c_peso and c_peso in df.columns:
         for _, row in df.iterrows():
             val = row[c_peso]
-            if pd.isna(val) or val <= 0:
+            radius = scale_radius(val, max_peso)
+            if radius <= 0:
                 continue
-            radius = scale_radius(val)
             popup = f"<b>Peso:</b> {val:,.2f} ton"
             folium.Circle(
                 location=[row["__LAT__"], row["__LON__"]],
-                radius=radius * 1000,
+                radius=radius,
                 color="#059669",
                 fill=True,
                 fillColor="#059669",
@@ -905,17 +907,18 @@ with aba3:
                 tooltip=f"Peso: {val:,.2f} ton"
             ).add_to(m3)
         added_any = True
-
+    
+    # --- Camada: Faturamento ---
     if show_fat and c_fat and c_fat in df.columns:
         for _, row in df.iterrows():
             val = row[c_fat]
-            if pd.isna(val) or val <= 0:
+            radius = scale_radius(val, max_fat)
+            if radius <= 0:
                 continue
-            radius = scale_radius(val)
             popup = f"<b>Faturamento:</b> R$ {val:,.2f}"
             folium.Circle(
                 location=[row["__LAT__"], row["__LON__"]],
-                radius=radius * 1000,
+                radius=radius,
                 color="#EA580C",
                 fill=True,
                 fillColor="#EA580C",
@@ -924,15 +927,15 @@ with aba3:
                 tooltip=f"Faturamento: R$ {val:,.2f}"
             ).add_to(m3)
         added_any = True
-
-    # Ajusta zoom se houver dados
+    
+    # Ajusta o zoom para cobrir todos os pontos, se houver
     if added_any:
         sw = [df["__LAT__"].min(), df["__LON__"].min()]
         ne = [df["__LAT__"].max(), df["__LON__"].max()]
         m3.fit_bounds([sw, ne], padding=(50, 50))
-
+    
     folium.LayerControl().add_to(m3)
-    folium_static(m3, width=1200, height=700)
+    folium_static(m3, width=None, height=700)  # width=None → 100% da largura
 
 # =====================================================
 # Rodapé
