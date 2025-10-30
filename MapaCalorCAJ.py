@@ -702,40 +702,40 @@ with aba2:
                 if not tipo_val:
                     continue
                 
-            # Decide se exibe com base nos checkboxes
-            exibir = False
-            if tipo_val == "CD" and show_cd:
-                exibir = True
-            elif tipo_val == "Fábrica" and show_fabrica:
-                exibir = True
-            elif tipo_val == "TP" and show_tp:
-                exibir = True
-            elif tipo_val == "OPL" and show_opl:
-                exibir = True
-
-            if not exibir:
-                continue
-
-            nome      = str(row.get(c_nome, "Unidade")) if c_nome else "Unidade"
-            abastec   = str(row.get(c_abastec, "-")) if c_abastec else "-"
-            cidade    = str(row.get(c_cidade, "-")) if c_cidade else "-"
-            uf        = str(row.get(c_uf, "-")) if c_uf else "-"
-
-            popup_html = f"""
-            <div style="font-family:Arial; font-size:13px">
-                <h4 style="margin:4px 0 8px 0">📍 {nome}</h4>
-                <p><b>Tipo:</b> {tipo_val}</p>
-                <p><b>Abastecido por:</b> {abastec}</p>
-                <p><b>Localização:</b> {cidade} - {uf}</p>
-            </div>
-            """
-
-        folium.Marker(
-            location=[row["__LAT__"], row["__LON__"]],
-            tooltip=f"{tipo_val}: {nome}",
-            popup=folium.Popup(popup_html, max_width=300),
-            icon=folium.Icon(color=get_icon_color(tipo_val), icon="building", prefix="fa")
-        ).add_to(m2)
+                # Decide se exibe com base nos checkboxes
+                exibir = False
+                if tipo_val == "CD" and show_cd:
+                    exibir = True
+                elif tipo_val == "Fábrica" and show_fabrica:
+                    exibir = True
+                elif tipo_val == "TP" and show_tp:
+                    exibir = True
+                elif tipo_val == "OPL" and show_opl:
+                    exibir = True
+    
+                if not exibir:
+                    continue
+    
+                nome      = str(row.get(c_nome, "Unidade")) if c_nome else "Unidade"
+                abastec   = str(row.get(c_abastec, "-")) if c_abastec else "-"
+                cidade    = str(row.get(c_cidade, "-")) if c_cidade else "-"
+                uf        = str(row.get(c_uf, "-")) if c_uf else "-"
+    
+                popup_html = f"""
+                <div style="font-family:Arial; font-size:13px">
+                    <h4 style="margin:4px 0 8px 0">📍 {nome}</h4>
+                    <p><b>Tipo:</b> {tipo_val}</p>
+                    <p><b>Abastecido por:</b> {abastec}</p>
+                    <p><b>Localização:</b> {cidade} - {uf}</p>
+                </div>
+                """
+    
+                folium.Marker(
+                    location=[row["__LAT__"], row["__LON__"]],
+                    tooltip=f"{tipo_val}: {nome}",
+                    popup=folium.Popup(popup_html, max_width=300),
+                    icon=folium.Icon(color=get_icon_color(tipo_val), icon="building", prefix="fa")
+                ).add_to(m2)
 
         # Ajusta zoom para abranger todas as unidades visíveis
         if show_cd or show_fabrica or show_tp or show_opl:
