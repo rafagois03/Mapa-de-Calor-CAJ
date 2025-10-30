@@ -686,6 +686,11 @@ with aba2:
         MousePosition().add_to(m2)
         Draw(export=True).add_to(m2)
 
+        if not df_map.empty:
+        sw = [df_map["__LAT__"].min(), df_map["__LON__"].min()]
+        ne = [df_map["__LAT__"].max(), df_map["__LON__"].max()]
+        m2.fit_bounds([sw, ne], padding=(50, 50))
+
 
       # Função de cor por tipo
         def get_icon_color(tipo):
