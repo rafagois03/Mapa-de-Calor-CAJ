@@ -714,7 +714,7 @@ with aba2:
                 exibir = True
 
             if not exibir:
-            continue
+                continue
 
             nome      = str(row.get(c_nome, "Unidade")) if c_nome else "Unidade"
             abastec   = str(row.get(c_abastec, "-")) if c_abastec else "-"
