@@ -658,21 +658,6 @@ with aba2:
     # Layout fixo: mapa + painel
     col_map, col_panel = st.columns([5, 2], gap="large")
 
-    # Painel lateral (checkboxes) — renomeado
-    with col_panel:
-        st.markdown('<div class="sticky-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
-
-        with st.expander("🏭 Unidades General Mills", expanded=True):
-            show_cd = st.checkbox("Centros de Distribuição (CD)", value=True, key="show_cd")
-            show_fabrica = st.checkbox("Fábricas", value=True, key="show_fabrica")           
-
-        with st.expander("Unidades Terceirizadas", expanded=True):
-            show_tp = st.checkbox("Transit Point", value=True, key="unidade_tp")
-            show_opl = st.checkbox("OPL", value=True, key="unidade_opl")
-
-        st.markdown('</div>', unsafe_allow_html=True)
     
 
     # ---------- MAPA FUNCIONAL ----------
@@ -757,6 +742,24 @@ with aba2:
         
         folium.LayerControl(collapsed=False).add_to(m2)
         folium_static(m2, width=1200, height=700)
+
+
+    # CONTROLES DE CAMADAS
+    # Painel lateral (checkboxes) — renomeado
+    with col_panel:
+        st.markdown('<div class="sticky-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
+        st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
+
+        with st.expander("🏭 Unidades General Mills", expanded=True):
+            show_cd = st.checkbox("Centros de Distribuição (CD)", value=True, key="show_cd")
+            show_fabrica = st.checkbox("Fábricas", value=True, key="show_fabrica")           
+
+        with st.expander("Unidades Terceirizadas", expanded=True):
+            show_tp = st.checkbox("Transit Point", value=True, key="unidade_tp")
+            show_opl = st.checkbox("OPL", value=True, key="unidade_opl")
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ========== TABELA ==========
