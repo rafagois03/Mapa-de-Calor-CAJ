@@ -655,6 +655,7 @@ with aba2:
     #gj_distritos = load_geojson_any([os.path.join(b, "milha_dist_polig.geojson") for b in base_dir_candidates])
     #gj_sede      = load_geojson_any([os.path.join(b, "Distritos_pontos.geojson") for b in base_dir_candidates])
 
+    # MAPA E CAMADAS
     # Layout fixo: mapa + painel
     col_map, col_panel = st.columns([5, 2], gap="large")
 
@@ -669,6 +670,21 @@ with aba2:
         MeasureControl().add_to(m2)
         MousePosition().add_to(m2)
         Draw(export=True).add_to(m2)
+
+
+      # Função de cor por tipo
+        def get_icon_color(tipo):
+            t = str(tipo).strip().lower()
+            if "cd" == t:
+                return "blue"
+            elif "fábrica" in t or "fabrica" in t:
+                return "darkred"
+            elif "opl" == t:
+                return "purple"
+            elif "tp" == t:
+                return "orange"
+            return "gray"
+
 
 
     # CONTROLES DE CAMADAS
@@ -750,18 +766,6 @@ with col_panel:
     # ---------- MAPA FUNCIONAL ----------
 
 
-    # Função de cor por tipo
-    def get_icon_color(tipo):
-        t = str(tipo).strip().lower()
-        if "cd" == t:
-            return "blue"
-        elif "fábrica" in t or "fabrica" in t:
-            return "darkred"
-        elif "opl" == t:
-            return "purple"
-        elif "tp" == t:
-            return "orange"
-        return "gray"
 
    
 # ========== TABELA ==========
