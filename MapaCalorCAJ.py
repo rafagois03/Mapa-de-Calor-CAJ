@@ -520,7 +520,7 @@ with aba1:
       
     # 👉 Painel de boas-vindas
     render_card(
-        "<h2>🌟 Bem-vindo ao Atlas Geoespacial de Transportes - General Mills do Brasil</h2>",
+        "<h2>🌟 Bem-vindo ao Atlas Geoespacial de Transportes - General Mills</h2>",
         """
         <p>
             Esta plataforma integra <strong>dados geoespaciais</strong> de entregas, pesos e faturamentos para apoiar a toma de deciões estratégias. 
