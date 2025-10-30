@@ -771,8 +771,6 @@ with aba2:
     else:
         st.dataframe(df_map, use_container_width=True)
 
-
-
 # ==============================================================================================================================================================
 # 3) Mapa de Calor — FERRAMENTAS PADRONIZADAS
 # ==============================================================================================================================================================
@@ -830,111 +828,111 @@ with aba3:
     c_peso     = pick_norm("Peso", "Peso_ton", "Peso (ton)", "Toneladas")
     c_fat      = pick_norm("Faturamento", "Faturamento_R$", "Faturamento (R$)", "Valor")
 
-    # Painel de controle
-    col_map, col_panel = st.columns([5, 2], gap="large")
 
-    with col_panel:
-        st.markdown('<div class="sticky-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="panel-title">📊 Métricas</div>', unsafe_allow_html=True)
-        st.markdown('<div class="panel-subtitle">Selecione o que deseja visualizar</div>', unsafe_allow_html=True)
+      # ========== PAINEL DE MÉTRICAS NA HORIZONTAL ==========
 
+    st.markdown("### 📊 Métricas")
+    st.markdown("<div style='margin-bottom: 1rem; font-weight: bold;'>Selecione o que deseja visualizar</div>", unsafe_allow_html=True)
+    
+    # Usa st.columns() para colocar os checkboxes lado a lado
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
         show_entregas = st.checkbox("📦 Entregas", value=True, key="show_entregas")
-        show_peso     = st.checkbox("⚖️ Peso (ton)", value=False, key="show_peso")
+    with col2:
+        show_peso     = st.checkbox("⚖️ Peso (kg)", value=False, key="show_peso")
+    with col3:
         show_fat      = st.checkbox("💰 Faturamento (R$)", value=False, key="show_fat")
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
+    
     # ========== MAPA DE CALOR ==========
-    with col_map:
-        st.markdown("### 🗺️ Mapa Interativo")
+    # Cria o mapa
+    m3 = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles=None)
+    add_base_tiles(m3)
+    Fullscreen(position='topright').add_to(m3)
+    MeasureControl().add_to(m3)
+    MousePosition().add_to(m3)
+    Draw(export=True).add_to(m3)
 
-        # Cria o mapa
-        m3 = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles=None)
-        add_base_tiles(m3)
-        Fullscreen(position='topright').add_to(m3)
-        MeasureControl().add_to(m3)
-        MousePosition().add_to(m3)
-        Draw(export=True).add_to(m3)
 
-        # Função para escalar o raio (evita bolhas gigantes)
-        def scale_radius(value, max_radius=40, log_scale=True):
-            if pd.isna(value) or value <= 0:
-                return 0
-            if log_scale:
-                return max(2, min(max_radius, 5 * (1 + np.log1p(value) / 10)))
-            else:
-                return max(2, min(max_radius, value / df[col].max() * max_radius))
+    import numpy as np
 
-        import numpy as np
+    # Função para escalar o raio (evita bolhas gigantes)
+    def scale_radius(value, max_radius=40, log_scale=True):
+        if pd.isna(value) or value <= 0:
+            return 0
+        if log_scale:
+            return max(2, min(max_radius, 5 * (1 + np.log1p(value) / 10)))
+        else:
+            return max(2, min(max_radius, value / df[col].max() * max_radius))
+            
+    # Adiciona camadas conforme seleção
+    added_any = False
 
-        # Adiciona camadas conforme seleção
-        added_any = False
+    if show_entregas and c_entregas and c_entregas in df.columns:
+        for _, row in df.iterrows():
+            val = row[c_entregas]
+            if pd.isna(val) or val <= 0:
+                continue
+            radius = scale_radius(val)
+            popup = f"<b>Entregas:</b> {val:,.0f}"
+            folium.Circle(
+                location=[row["__LAT__"], row["__LON__"]],
+                radius=radius * 1000,  # metros
+                color="#1E3A8A",
+                fill=True,
+                fillColor="#1E3A8A",
+                fillOpacity=0.6,
+                popup=folium.Popup(popup, max_width=200),
+                tooltip=f"Entregas: {val:,.0f}"
+            ).add_to(m3)
+        added_any = True
 
-        if show_entregas and c_entregas and c_entregas in df.columns:
-            for _, row in df.iterrows():
-                val = row[c_entregas]
-                if pd.isna(val) or val <= 0:
-                    continue
-                radius = scale_radius(val)
-                popup = f"<b>Entregas:</b> {val:,.0f}"
-                folium.Circle(
-                    location=[row["__LAT__"], row["__LON__"]],
-                    radius=radius * 1000,  # metros
-                    color="#1E3A8A",
-                    fill=True,
-                    fillColor="#1E3A8A",
-                    fillOpacity=0.6,
-                    popup=folium.Popup(popup, max_width=200),
-                    tooltip=f"Entregas: {val:,.0f}"
-                ).add_to(m3)
-            added_any = True
+    if show_peso and c_peso and c_peso in df.columns:
+        for _, row in df.iterrows():
+            val = row[c_peso]
+            if pd.isna(val) or val <= 0:
+                continue
+            radius = scale_radius(val)
+            popup = f"<b>Peso:</b> {val:,.2f} ton"
+            folium.Circle(
+                location=[row["__LAT__"], row["__LON__"]],
+                radius=radius * 1000,
+                color="#059669",
+                fill=True,
+                fillColor="#059669",
+                fillOpacity=0.6,
+                popup=folium.Popup(popup, max_width=200),
+                tooltip=f"Peso: {val:,.2f} ton"
+            ).add_to(m3)
+        added_any = True
 
-        if show_peso and c_peso and c_peso in df.columns:
-            for _, row in df.iterrows():
-                val = row[c_peso]
-                if pd.isna(val) or val <= 0:
-                    continue
-                radius = scale_radius(val)
-                popup = f"<b>Peso:</b> {val:,.2f} ton"
-                folium.Circle(
-                    location=[row["__LAT__"], row["__LON__"]],
-                    radius=radius * 1000,
-                    color="#059669",
-                    fill=True,
-                    fillColor="#059669",
-                    fillOpacity=0.6,
-                    popup=folium.Popup(popup, max_width=200),
-                    tooltip=f"Peso: {val:,.2f} ton"
-                ).add_to(m3)
-            added_any = True
+    if show_fat and c_fat and c_fat in df.columns:
+        for _, row in df.iterrows():
+            val = row[c_fat]
+            if pd.isna(val) or val <= 0:
+                continue
+            radius = scale_radius(val)
+            popup = f"<b>Faturamento:</b> R$ {val:,.2f}"
+            folium.Circle(
+                location=[row["__LAT__"], row["__LON__"]],
+                radius=radius * 1000,
+                color="#EA580C",
+                fill=True,
+                fillColor="#EA580C",
+                fillOpacity=0.6,
+                popup=folium.Popup(popup, max_width=200),
+                tooltip=f"Faturamento: R$ {val:,.2f}"
+            ).add_to(m3)
+        added_any = True
 
-        if show_fat and c_fat and c_fat in df.columns:
-            for _, row in df.iterrows():
-                val = row[c_fat]
-                if pd.isna(val) or val <= 0:
-                    continue
-                radius = scale_radius(val)
-                popup = f"<b>Faturamento:</b> R$ {val:,.2f}"
-                folium.Circle(
-                    location=[row["__LAT__"], row["__LON__"]],
-                    radius=radius * 1000,
-                    color="#EA580C",
-                    fill=True,
-                    fillColor="#EA580C",
-                    fillOpacity=0.6,
-                    popup=folium.Popup(popup, max_width=200),
-                    tooltip=f"Faturamento: R$ {val:,.2f}"
-                ).add_to(m3)
-            added_any = True
+    # Ajusta zoom se houver dados
+    if added_any:
+        sw = [df["__LAT__"].min(), df["__LON__"].min()]
+        ne = [df["__LAT__"].max(), df["__LON__"].max()]
+        m3.fit_bounds([sw, ne], padding=(50, 50))
 
-        # Ajusta zoom se houver dados
-        if added_any:
-            sw = [df["__LAT__"].min(), df["__LON__"].min()]
-            ne = [df["__LAT__"].max(), df["__LON__"].max()]
-            m3.fit_bounds([sw, ne], padding=(50, 50))
-
-        folium.LayerControl().add_to(m3)
-        folium_static(m3, width=1200, height=700)
+    folium.LayerControl().add_to(m3)
+    folium_static(m3, width=1200, height=700)
 
 # =====================================================
 # Rodapé
