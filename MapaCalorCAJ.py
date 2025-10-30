@@ -664,9 +664,9 @@ with aba2:
         st.markdown('<div class="panel-title">🎛️ Camadas do Mapa</div>', unsafe_allow_html=True)
         st.markdown('<div class="panel-subtitle">Controle a visualização</div>', unsafe_allow_html=True)
 
-        with st.expander("Unidades General Mills", expanded=True):
-            show_cd = st.checkbox("Centros de Distribuição", value=True, key="unidade_markers")
-            show_fabrica = st.checkbox("Fábricas", value=True, key="unidade_markers")           
+        with st.expander("🏭 Unidades General Mills", expanded=True):
+            show_cd = st.checkbox("Centros de Distribuição (CD)", value=True, key="show_cd")
+            show_fabrica = st.checkbox("Fábricas", value=True, key="show_fabrica")           
 
         with st.expander("Unidades Terceirizadas", expanded=True):
             show_tp = st.checkbox("Transit Point", value=True, key="unidade_tp")
