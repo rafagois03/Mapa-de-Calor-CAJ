@@ -777,7 +777,6 @@ with aba2:
 # 3) Mapa de Calor — FERRAMENTAS PADRONIZADAS
 # ==============================================================================================================================================================
 
-"""
 with aba3:
     # Import robusto (local) para capturar viewport quando possível
     try:
@@ -1024,7 +1023,7 @@ with aba3:
                 # Criar popup simplificado conforme solicitado
                 popup_content = f"""
 
-"""
+
                 <div style='font-family:Arial;font-size:12px;max-width:300px'>
                     <b>Requerente:</b> {props.get('REQUERENTE', 'N/A')}<br>
                     <b>Tipo Manancial:</b> {props.get('TIPO MANANCIAL', 'N/A')}<br>
@@ -1035,7 +1034,7 @@ with aba3:
                 </div>
                 """
 
-"""
+
 
                 # Definir cor baseada no tipo de uso
                 tipo_uso = props.get('TIPO DE USO', '').upper()
@@ -1140,7 +1139,7 @@ with aba3:
         else:
             # Fallback: sem captura de viewport 
             folium_static(m3, width=1200, height=700)
-"""
+
 
 # =====================================================
 # Rodapé
