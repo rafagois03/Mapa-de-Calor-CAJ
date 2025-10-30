@@ -736,7 +736,6 @@ with aba2:
             popup=folium.Popup(popup_html, max_width=300),
             icon=folium.Icon(color=get_icon_color(tipo_val), icon="building", prefix="fa")
         ).add_to(m2)
-            lyr_unidade.add_to(m2)
 
         # Ajusta zoom para abranger todas as unidades visíveis
         if show_cd or show_fabrica or show_tp or show_opl:
