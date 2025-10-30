@@ -588,24 +588,29 @@ with aba2:
         st.error(f"Erro ao ler o arquivo Excel: {e}")
         st.stop()
 
-    if not df_unidades_raw.empty:
-        # Normaliza colunas
-        colmap = {c: norm_col(c) for c in df_unidades_raw.columns}
-        df_unidade = df_unidades_raw.rename(columns=colmap).copy()
+    if df_unidades_raw.empty:
+        st.error("O arquivo está vazio.")
+        st.stop()
     
-        # Detecta lat/lon (já estão nomeadas como "Latitude" e "Longitude")
-        lat_col = next((c for c in df_unidades.columns if c in {"latitude", "lat"}), None)
-        lon_col = next((c for c in df_unidades.columns if c in {"longitude", "long", "lon"}), None)
-        if not lat_col or not lon_col:
-            coords = autodetect_coords(df_unidades_raw.copy())
-            if coords:
-                lat_col, lon_col = coords
-
-        if not lat_col or not lon_col:
-            st.error("Não foi possível localizar colunas de latitude/longitude.")
-            st.stop()
-
-    dt["__LAT__"] = to_float_series(df[lat_col])
+    # Normaliza os nomes das colunas
+    colmap = {c: norm_col(c) for c in df_unidades_raw.columns}
+    df = df_unidades_raw.rename(columns=colmap).copy()  # usa 'df' como nome principal
+    
+    # Detecta colunas de latitude e longitude
+    lat_col = next((c for c in df.columns if c in {"latitude", "lat"}), None)
+    lon_col = next((c for c in df.columns if c in {"longitude", "long", "lon"}), None)
+    
+    if not lat_col or not lon_col:
+        coords = autodetect_coords(df_unidades_raw.copy())
+        if coords:
+            lat_col, lon_col = coords
+    
+    if not lat_col or not lon_col:
+        st.error("Não foi possível localizar colunas de latitude/longitude.")
+        st.stop()
+    
+    # Converte coordenadas para numérico
+    df["__LAT__"] = to_float_series(df[lat_col])
     df["__LON__"] = to_float_series(df[lon_col])
 
     # Heurística para corrigir inversão e sinal — ajustada para o território brasileiro
