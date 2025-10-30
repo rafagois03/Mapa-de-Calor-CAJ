@@ -824,9 +824,9 @@ with aba3:
         st.stop()
 
     # Identifica colunas de métricas (ajuste os nomes conforme seu Excel)
-    c_entregas = pick_norm("Entregas", "Qtd Entregas", "Entrega")
-    c_peso     = pick_norm("Peso", "Peso_ton", "Peso (ton)", "Toneladas")
-    c_fat      = pick_norm("Faturamento", "Faturamento_R$", "Faturamento (R$)", "Valor")
+    c_entregas = pick_norm("Entregas")
+    c_peso     = pick_norm("Peso")
+    c_fat      = pick_norm("Faturamento")
 
 
       # ========== PAINEL DE MÉTRICAS NA HORIZONTAL ==========
