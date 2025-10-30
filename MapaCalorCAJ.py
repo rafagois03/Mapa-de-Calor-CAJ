@@ -543,10 +543,10 @@ with aba1:
                 "<p>Na aba <strong>'Malha de Transportes'</strong> você encontrará:</p>"
                 "<ul>"
                 "<li>Centros de Distribuição da General Mills</li>"
-                "<li>Centro Fabril</li>"
+                "<li>Centros Fabris</li>"
                 "<li>Transit Points (Terceirizados)</li>"
                 "<li>Operadores Logísticos de CrossDocking(Terceirizados)</li>"
-                "<li>Copacker</li>"
+                "<li>Copackers</li>"
                 "</ul>"
             )
         )
