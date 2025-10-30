@@ -659,6 +659,18 @@ with aba2:
     col_map, col_panel = st.columns([5, 2], gap="large")
 
 
+    with col_map:
+        st.markdown("### 🗺️ Mapa Interativo")
+
+        # Centraliza no Brasil
+        m2 = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles=None)
+        add_base_tiles(m2)
+        Fullscreen(position='topright').add_to(m2)
+        MeasureControl().add_to(m2)
+        MousePosition().add_to(m2)
+        Draw(export=True).add_to(m2)
+
+
     # CONTROLES DE CAMADAS
 # Painel lateral (checkboxes) — renomeado
 with col_panel:
@@ -676,35 +688,8 @@ with col_panel:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    
 
-    # ---------- MAPA FUNCIONAL ----------
-    with col_map:
-        st.markdown("### 🗺️ Mapa Interativo")
-
-        # Centraliza no Brasil
-        m2 = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles=None)
-        add_base_tiles(m2)
-        Fullscreen(position='topright').add_to(m2)
-        MeasureControl().add_to(m2)
-        MousePosition().add_to(m2)
-        Draw(export=True).add_to(m2)
-
-
-        # Função de cor por tipo
-        def get_icon_color(tipo):
-            t = str(tipo).strip().lower()
-            if "cd" == t:
-                return "blue"
-            elif "fábrica" in t or "fabrica" in t:
-                return "darkred"
-            elif "opl" == t:
-                return "purple"
-            elif "tp" == t:
-                return "orange"
-            return "gray"
-
-        # Adiciona marcadores conforme filtros
+     # Adiciona marcadores conforme filtros
         for _, row in df_map.iterrows():
             tipo_val = str(row.get(c_tipo, "")).strip()
             if not tipo_val:
@@ -760,6 +745,27 @@ with col_panel:
     
     folium.LayerControl(collapsed=False).add_to(m2)
     folium_static(m2, width=1200, height=700)
+
+    
+
+    # ---------- MAPA FUNCIONAL ----------
+
+
+
+        # Função de cor por tipo
+        def get_icon_color(tipo):
+            t = str(tipo).strip().lower()
+            if "cd" == t:
+                return "blue"
+            elif "fábrica" in t or "fabrica" in t:
+                return "darkred"
+            elif "opl" == t:
+                return "purple"
+            elif "tp" == t:
+                return "orange"
+            return "gray"
+
+       
 
 
 
