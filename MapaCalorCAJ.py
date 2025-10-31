@@ -7,6 +7,8 @@ import json
 import re
 import os
 import unicodedata
+import numpy as np
+from folium.plugins import HeatMap
 
 # =====================================================
 # Configuração inicial com tema personalizado
@@ -248,10 +250,10 @@ def create_header():
         f"""
         <div class="main-header fade-in">
             <div class="header-content">
-                <img src="https://pt.wikipedia.org/wiki/Ficheiro:General_Mills_logo.svg" alt="Logo da General Mills" class="header-logo">
+                <img src="https://companieslogo.com/img/orig/GIS_BIG.D-33aa1bbe.png?t=1720244492" alt="Logo da General Mills" class="header-logo">
                 <div class="header-text">
-                    <h1>Mapa de Calor - General Mills - Cajamar > São Paulo</h1>
-                    <p>Visualize dados de entregas, peso e faturamento da unidade de forma interativa</p>
+                    <h1>Atlas de Transportes - General Mills</h1>
+                    <p>Visualize os dados de transportes de forma interativa</p>
                 </div>
             </div>
         </div>
@@ -772,7 +774,7 @@ with aba2:
         st.dataframe(df_map, use_container_width=True)
 
 # ==============================================================================================================================================================
-# 3) Mapa de Calor — FERRAMENTAS PADRONIZADAS
+# 3) Mapa de Calor
 # ==============================================================================================================================================================
 
 with aba3:
@@ -824,29 +826,42 @@ with aba3:
         st.stop()
 
     # Identifica colunas de métricas (ajuste os nomes conforme seu Excel)
-    c_entregas = pick_norm("Entregas")
-    c_peso     = pick_norm("Peso")
-    c_fat      = pick_norm("Faturamento")
+    c_entregas = "entregas"
+    c_peso     = ("peso")
+    c_fat      = ("faturamento")
 
 
       # ========== PAINEL DE MÉTRICAS NA HORIZONTAL ==========
 
     st.markdown("### 📊 Métricas")
-    st.markdown("<div style='margin-bottom: 1rem; font-weight: bold;'>Selecione o que deseja visualizar</div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom: 1rem; font-weight: bold;'>Selecione o que e como deseja visualizar</div>", unsafe_allow_html=True)
     
     # Usa st.columns() para colocar os checkboxes lado a lado
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        show_entregas = st.checkbox("📦 Entregas", value=True, key="show_entregas")
+        st.markdown("#### 🫧 Bolhas")
+        show_bolhas_entregas = st.checkbox("📦 Entregas", value=True, key="bolhas_entregas")
+        show_bolhas_peso = st.checkbox("⚖️ Peso", value=False, key="bolhas_peso")
+        show_bolhas_fat = st.checkbox("💰 Faturamento", value=False, key="bolhas_fat")
+        
+
     with col2:
-        show_peso     = st.checkbox("⚖️ Peso (kg)", value=False, key="show_peso")
+        st.markdown("#### 🔥 Calor")
+        show_heat_entregas = st.checkbox("📦 Entregas", value=False, key="heat_entregas")
+        show_heat_peso = st.checkbox("⚖️ Peso", value=False, key="heat_peso")
+        show_heat_fat = st.checkbox("💰 Faturamento", value=False, key="heat_fat")
+
     with col3:
-        show_fat      = st.checkbox("💰 Faturamento (R$)", value=False, key="show_fat")
-    
+        st.markdown("### 🎨 Estilo")
+        radius_heat = st.slider("Raio do calor", 10, 50, 25)
+        blur_heat = st.slider("Desfoque", 5, 30, 15)
+               
+
+
 # ========== MAPA DE BOLHAS ==========
     # Cria o mapa
-    m3 = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles=None)
+    m3 = folium.Map(location=[-23.5, -46.6], zoom_start=6, tiles=None)
     add_base_tiles(m3)
     Fullscreen(position='topright').add_to(m3)
     MeasureControl().add_to(m3)
@@ -859,17 +874,17 @@ with aba3:
     max_fat      = df[c_fat].max()      if c_fat      and c_fat      in df.columns else 1
     
     # Função segura para calcular o raio (em pixels, depois convertido para metros)
-    def scale_radius(value, max_val, max_radius_meters=30000):
+    def scale_radius(value, max_val, max_radius_meters=15000):
         if pd.isna(value) or value <= 0 or max_val <= 0:
             return 0
-        # Escala linear: valor proporcional ao máximo
-        radius_meters = (value / max_val) * max_radius_meters
-        return max(500, min(radius_meters, max_radius_meters))  # mínimo de 500m para visibilidade
+        # Usa escala logarítmica para melhor visualização
+        radius = 300 + (np.log1p(value) / np.log1p(max_val)) * max_radius_meters
+        return min(radius, max_radius_meters)
     
     added_any = False
     
     # --- Camada: Entregas ---
-    if show_entregas and c_entregas and c_entregas in df.columns:
+    if show_bolhas_entregas and c_entregas and c_entregas in df.columns:
         for _, row in df.iterrows():
             val = row[c_entregas]
             radius = scale_radius(val, max_entregas)
@@ -889,7 +904,7 @@ with aba3:
         added_any = True
     
     # --- Camada: Peso ---
-    if show_peso and c_peso and c_peso in df.columns:
+    if show_bolhas_peso and c_peso and c_peso in df.columns:
         for _, row in df.iterrows():
             val = row[c_peso]
             radius = scale_radius(val, max_peso)
@@ -909,7 +924,7 @@ with aba3:
         added_any = True
     
     # --- Camada: Faturamento ---
-    if show_fat and c_fat and c_fat in df.columns:
+    if show_bolhas_fat and c_fat and c_fat in df.columns:
         for _, row in df.iterrows():
             val = row[c_fat]
             radius = scale_radius(val, max_fat)
@@ -927,7 +942,58 @@ with aba3:
                 tooltip=f"Faturamento: R$ {val:,.2f}"
             ).add_to(m3)
         added_any = True
-    
+
+    # Função para gerar dados de calor: [[lat, lon, valor], ...]
+    def get_heat_data(df, col_valor):
+        # Remove valores nulos ou <= 0
+        df_clean = df[[ "__LAT__", "__LON__", col_valor ]].dropna()
+        df_clean = df_clean[df_clean[col_valor] > 0]
+        # Normaliza para evitar pesos extremos (opcional)
+        max_val = df_clean[col_valor].max()
+        df_clean["weight"] = df_clean[col_valor] / max_val  # escala 0–1
+        return df_clean[["__LAT__", "__LON__", "weight"]].values.tolist()
+
+    # --- Mapa de Calor ---
+    if show_heat_entregas and c_entregas in df.columns:
+        heat_data = get_heat_data(df, c_entregas)
+        if heat_data:
+            HeatMap(
+                heat_data,
+                name="Calor: Entregas",
+                radius=radius_heat,
+                blur=blur_heat,
+                min_opacity=0.4,
+                gradient={0.4: 'blue', 0.6: 'lime', 0.8: 'orange', 1.0: 'red'}
+            ).add_to(m3)
+
+    if show_heat_peso and c_peso in df.columns:
+        heat_data = get_heat_data(df, c_peso)
+        if heat_data:
+            HeatMap(
+                heat_data,
+                name="Calor: Peso",
+                radius=radius_heat,
+                blur=blur_heat,
+                min_opacity=0.4,
+                gradient={0.4: 'green', 0.6: 'yellow', 0.8: 'orange', 1.0: 'red'}
+            ).add_to(m3)
+
+    if show_heat_fat and c_fat in df.columns:
+        heat_data = get_heat_data(df, c_fat)
+        if heat_data:
+            HeatMap(
+                heat_data,
+                name="Calor: Faturamento",
+                radius=radius_heat,
+                blur=blur_heat,
+                min_opacity=0.4,
+                gradient={0.4: 'purple', 0.6: 'violet', 0.8: 'orange', 1.0: 'red'}
+            ).add_to(m3)
+
+
+
+
+
     # Ajusta o zoom para cobrir todos os pontos, se houver
     if added_any:
         sw = [df["__LAT__"].min(), df["__LON__"].min()]
